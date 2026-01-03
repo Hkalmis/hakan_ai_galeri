@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { PROMPTS, INITIAL_ART_STYLES, SITE_CONFIG } from './constants';
-import { PromptItem, Category, ToastMessage } from './types';
+import { PromptItem, ToastMessage } from './types';
 import PromptCard from './components/PromptCard';
 import PromptModal from './components/PromptModal';
 import PromptOptimizer from './components/PromptOptimizer';
@@ -21,6 +21,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     document.title = `${SITE_CONFIG.name} | AI Prompt Galerisi`;
+    // Simüle edilmiş yükleme efekti
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);

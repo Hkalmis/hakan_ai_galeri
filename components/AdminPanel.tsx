@@ -50,7 +50,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   useEffect(() => {
     if (!isOpen) {
       resetForm();
-      setIsAuthorized(false); // Güvenlik: Panel kapandığında logout yap
+      setIsAuthorized(false); // Güvenlik: Panel her kapandığında çıkış yap
       setLoginForm({ username: '', password: '' });
       setLoginError(false);
     }
@@ -70,68 +70,71 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // GÜVENLİ GİRİŞ BİLGİLERİ
+    // GİRİŞ BİLGİLERİ KONTROLÜ
     if (loginForm.username === 'admin' && loginForm.password === 'hakan123') {
       setIsAuthorized(true);
       setLoginError(false);
-      addToast('Yönetici girişi başarılı. Hoş geldiniz.', 'success');
+      addToast('Yönetici yetkisi onaylandı. Hoş geldiniz.', 'success');
     } else {
       setLoginError(true);
-      addToast('Hatalı kullanıcı adı veya şifre!', 'error');
+      addToast('Kimlik doğrulama başarısız!', 'error');
+      // Sarsıntı efekti için kısa süre sonra hatayı sıfırla
       setTimeout(() => setLoginError(false), 500);
     }
   };
 
   if (!isOpen) return null;
 
-  // GİRİŞ EKRANI (LOGIN VIEW)
+  // GİRİŞ EKRANI (AUTH MODAL)
   if (!isAuthorized) {
     return (
       <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onClose}></div>
-        <div className={`relative w-full max-w-md glass border ${loginError ? 'border-red-500 animate-shake' : 'border-cyber-cyan/30'} rounded-2xl p-8 shadow-[0_0_50px_rgba(6,182,212,0.1)] transition-all`}>
+        <div className={`relative w-full max-w-md glass border rounded-2xl p-8 shadow-[0_0_50px_rgba(6,182,212,0.1)] transition-all ${loginError ? 'border-red-500 animate-shake' : 'border-cyber-cyan/30'}`}>
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-cyber-cyan/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyber-cyan/20">
-              <i className="fas fa-lock text-cyber-cyan text-2xl"></i>
+              <i className="fas fa-fingerprint text-cyber-cyan text-2xl"></i>
             </div>
-            <h2 className="text-xl font-display font-bold text-white tracking-widest uppercase">ADMİN ERİŞİMİ</h2>
-            <p className="text-xs text-slate-500 mt-2">Sistem yönetimi için kimlik doğrulaması gerekli</p>
+            <h2 className="text-xl font-display font-bold text-white tracking-widest uppercase">ADMİN GİRİŞİ</h2>
+            <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-tighter">Yönetici paneline erişmek için yetkilendirme gerekiyor</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Kullanıcı Adı</label>
+              <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest ml-1">Kullanıcı Adı</label>
               <input 
                 type="text"
                 autoFocus
+                required
                 value={loginForm.username}
                 onChange={e => setLoginForm({...loginForm, username: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-cyber-cyan/30 text-white placeholder:text-slate-700 transition-all"
-                placeholder="Admin kullanıcı adı"
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-cyber-cyan/30 text-white placeholder:text-slate-700 transition-all text-sm"
+                placeholder="admin"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Şifre</label>
+              <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest ml-1">Şifre</label>
               <input 
                 type="password"
+                required
                 value={loginForm.password}
                 onChange={e => setLoginForm({...loginForm, password: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-cyber-magenta/30 text-white placeholder:text-slate-700 transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-cyber-magenta/30 text-white placeholder:text-slate-700 transition-all text-sm"
                 placeholder="••••••••"
               />
             </div>
             <button 
               type="submit"
-              className="w-full bg-gradient-to-r from-cyber-cyan to-cyber-purple text-cyber-black font-bold py-4 rounded-xl shadow-lg hover:shadow-cyber-cyan/40 transition-all font-display tracking-widest uppercase"
+              className="w-full bg-gradient-to-r from-cyber-cyan to-cyber-purple text-cyber-black font-bold py-4 rounded-xl shadow-lg hover:shadow-cyber-cyan/40 transition-all font-display tracking-widest uppercase text-sm"
             >
-              Sisteme Giriş Yap
+              YETKİYİ DOĞRULA
             </button>
             <button 
               type="button"
               onClick={onClose}
-              className="w-full text-slate-500 hover:text-white text-[10px] uppercase tracking-widest transition-colors mt-2"
+              className="w-full text-slate-600 hover:text-white text-[10px] uppercase tracking-widest transition-colors"
             >
-              İptal Et ve Geri Dön
+              İptal Et
             </button>
           </form>
         </div>
@@ -139,7 +142,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     );
   }
 
-  // ANA YÖNETİM PANELİ (AUTHORIZED VIEW)
+  // ANA PANEL (YETKİLİ GÖRÜNÜM)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -255,7 +258,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
-          
           {/* TAB: STİLLER */}
           {activeTab === 'styles' && (
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 animate-fade-in">
@@ -337,7 +339,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           {/* TAB: EKLE / DÜZENLE */}
           {activeTab === 'create' && (
             <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-8 animate-fade-in">
-              {/* Sol Kolon */}
               <div className="md:w-1/3 space-y-6">
                 <div className="space-y-2">
                   <label className="text-xs font-display text-slate-500 uppercase tracking-widest">Görsel</label>
@@ -382,7 +383,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
               </div>
 
-              {/* Sağ Kolon */}
               <div className="md:w-2/3 space-y-6 flex flex-col">
                 <div className="space-y-2">
                   <label className="text-xs font-display text-slate-500 uppercase tracking-widest">Prompt Metni</label>
@@ -397,7 +397,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 <div className="flex-1 space-y-6">
                   <h3 className="text-sm font-display text-cyber-cyan uppercase tracking-widest border-b border-cyber-cyan/20 pb-2">Türler / Etiketler</h3>
-                  
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 overflow-y-auto max-h-[300px] pr-2 no-scrollbar">
                       {artStyles.map((group) => (
                         <div key={group.label} className="space-y-3">
