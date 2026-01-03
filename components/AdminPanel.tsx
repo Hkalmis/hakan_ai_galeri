@@ -26,6 +26,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   artStyles, 
   addToast 
 }) => {
+  // Auth State
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState(false);
+
+  // Management State
   const [activeTab, setActiveTab] = useState<'create' | 'manage' | 'styles'>('create');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -44,6 +50,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   useEffect(() => {
     if (!isOpen) {
       resetForm();
+      setIsAuthorized(false); // Güvenlik: Panel kapandığında logout yap
+      setLoginForm({ username: '', password: '' });
+      setLoginError(false);
     }
   }, [isOpen]);
 
@@ -59,8 +68,78 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     setEditingId(null);
   };
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // GÜVENLİ GİRİŞ BİLGİLERİ
+    if (loginForm.username === 'admin' && loginForm.password === 'hakan123') {
+      setIsAuthorized(true);
+      setLoginError(false);
+      addToast('Yönetici girişi başarılı. Hoş geldiniz.', 'success');
+    } else {
+      setLoginError(true);
+      addToast('Hatalı kullanıcı adı veya şifre!', 'error');
+      setTimeout(() => setLoginError(false), 500);
+    }
+  };
+
   if (!isOpen) return null;
 
+  // GİRİŞ EKRANI (LOGIN VIEW)
+  if (!isAuthorized) {
+    return (
+      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onClose}></div>
+        <div className={`relative w-full max-w-md glass border ${loginError ? 'border-red-500 animate-shake' : 'border-cyber-cyan/30'} rounded-2xl p-8 shadow-[0_0_50px_rgba(6,182,212,0.1)] transition-all`}>
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-cyber-cyan/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyber-cyan/20">
+              <i className="fas fa-lock text-cyber-cyan text-2xl"></i>
+            </div>
+            <h2 className="text-xl font-display font-bold text-white tracking-widest uppercase">ADMİN ERİŞİMİ</h2>
+            <p className="text-xs text-slate-500 mt-2">Sistem yönetimi için kimlik doğrulaması gerekli</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Kullanıcı Adı</label>
+              <input 
+                type="text"
+                autoFocus
+                value={loginForm.username}
+                onChange={e => setLoginForm({...loginForm, username: e.target.value})}
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-cyber-cyan/30 text-white placeholder:text-slate-700 transition-all"
+                placeholder="Admin kullanıcı adı"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Şifre</label>
+              <input 
+                type="password"
+                value={loginForm.password}
+                onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-cyber-magenta/30 text-white placeholder:text-slate-700 transition-all"
+                placeholder="••••••••"
+              />
+            </div>
+            <button 
+              type="submit"
+              className="w-full bg-gradient-to-r from-cyber-cyan to-cyber-purple text-cyber-black font-bold py-4 rounded-xl shadow-lg hover:shadow-cyber-cyan/40 transition-all font-display tracking-widest uppercase"
+            >
+              Sisteme Giriş Yap
+            </button>
+            <button 
+              type="button"
+              onClick={onClose}
+              className="w-full text-slate-500 hover:text-white text-[10px] uppercase tracking-widest transition-colors mt-2"
+            >
+              İptal Et ve Geri Dön
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ANA YÖNETİM PANELİ (AUTHORIZED VIEW)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
