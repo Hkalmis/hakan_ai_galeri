@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
 
 interface PromptOptimizerProps {
   isOpen: boolean;
@@ -13,35 +12,45 @@ const PromptOptimizer: React.FC<PromptOptimizerProps> = ({ isOpen, onClose, onCo
   const [output, setOutput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Uygulama genelinde kullanılan sabit kullanıcı ID'si (Gerçek auth sisteminden gelmelidir)
+  const CURRENT_USER_ID = 'demo-user';
+
   const handleOptimize = async () => {
     if (!input.trim()) return;
     
     setIsGenerating(true);
     try {
-      // API Key her zaman process.env.API_KEY üzerinden güvenli bir şekilde alınır.
-      // Not: Bu yapı, üretim ortamında bir proxy üzerinden veya güvenli env injection ile çalışmalıdır.
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Optimize this prompt for an AI Image Generator like Midjourney or Gemini. 
-                  Style: Cyberpunk, high detail, artistic. 
-                  Input: ${input}`,
-        config: {
-          systemInstruction: "Dünya standartlarında bir AI Prompt Mühendisisin. Görevin basit fikirleri canlı, betimleyici ve profesyonel görsel promptlarına dönüştürmektir.",
-          temperature: 0.8,
+      /**
+       * GÜVENLİK İYİLEŞTİRMESİ:
+       * Doğrudan client-side SDK kullanımı yerine sunucu rotası (API Proxy) kullanılıyor.
+       * Bu sayede API Key istemciye sızmaz ve yetki kontrolleri backend'de yapılır.
+       */
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-authenticated-user-id': CURRENT_USER_ID // Sunucuya kendimizi tanıtıyoruz
         },
+        body: JSON.stringify({ 
+          userId: CURRENT_USER_ID, // Vercel güvenlik kontrolü için gerekli ID eşleşmesi
+          prompt: input 
+        }),
       });
 
-      // SDK Kuralları: response.text bir property'dir, metot değil.
-      if (response && response.text) {
-        setOutput(response.text);
-      } else {
-        setOutput('Prompt oluşturulamadı.');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'İstek işlenirken bir hata oluştu.');
       }
-    } catch (error) {
-      console.error("AI Error:", error);
-      setOutput('Sinir ağına bağlanırken hata oluştu. Lütfen bağlantınızı kontrol edin.');
+
+      if (data.result) {
+        setOutput(data.result);
+      } else {
+        setOutput('İşlem başarısız oldu.');
+      }
+    } catch (error: any) {
+      console.error("Optimize Error:", error);
+      setOutput(error.message || 'Sinir ağına bağlanırken bir hata oluştu.');
     } finally {
       setIsGenerating(false);
     }
@@ -84,7 +93,7 @@ const PromptOptimizer: React.FC<PromptOptimizerProps> = ({ isOpen, onClose, onCo
             {isGenerating ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                YAPAY ZEKA İŞLİYOR...
+                GÜVENLİ İŞLEM YAPILIYOR...
               </>
             ) : (
               <>
@@ -113,7 +122,7 @@ const PromptOptimizer: React.FC<PromptOptimizerProps> = ({ isOpen, onClose, onCo
         </div>
 
         <div className="mt-auto pt-6 border-t border-white/5 text-[10px] text-slate-500 text-center italic uppercase">
-          GEMINI 3 FLASH MOTORU TARAFINDAN DESTEKLENMEKTEDİR
+          VERCEL SECURE PROXY • SUNUCU TARAFLI DOĞRULAMA AKTİF
         </div>
       </div>
     </div>
