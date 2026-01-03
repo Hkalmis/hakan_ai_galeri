@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { PROMPTS, INITIAL_ART_STYLES, SITE_CONFIG } from './constants';
+import { INITIAL_ART_STYLES, SITE_CONFIG } from './constants';
 import { PromptItem, ToastMessage } from './types';
 import PromptCard from './components/PromptCard';
 import PromptModal from './components/PromptModal';
@@ -14,16 +14,30 @@ const App: React.FC = () => {
   const [selectedPrompt, setSelectedPrompt] = useState<PromptItem | null>(null);
   const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [allPrompts, setAllPrompts] = useState<PromptItem[]>(PROMPTS);
+  const [allPrompts, setAllPrompts] = useState<PromptItem[]>([]); // Boş başlıyoruz
   const [artStyles, setArtStyles] = useState(INITIAL_ART_STYLES);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // VERİLERİ VERİTABANINDAN ÇEK
+  const fetchPrompts = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/prompts');
+      if (response.ok) {
+        const data = await response.json();
+        setAllPrompts(data);
+      }
+    } catch (error) {
+      addToast('Sunucu bağlantısı kurulamadı.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     document.title = `${SITE_CONFIG.name} | AI Prompt Galerisi`;
-    // Simüle edilmiş yükleme efekti
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
+    fetchPrompts();
   }, []);
 
   const categories = useMemo(() => {
@@ -58,17 +72,38 @@ const App: React.FC = () => {
     }
   };
 
-  const addNewPrompt = (newPrompt: PromptItem) => {
-    setAllPrompts(prev => [newPrompt, ...prev]);
+  const addNewPrompt = async (newPrompt: PromptItem) => {
+    try {
+      const response = await fetch('/api/prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPrompt)
+      });
+      if (response.ok) {
+        const savedPrompt = await response.json();
+        setAllPrompts(prev => [savedPrompt, ...prev]);
+        addToast('İçerik veritabanına kaydedildi!');
+      }
+    } catch (error) {
+      addToast('Veritabanına kaydedilemedi.', 'error');
+    }
   };
 
-  const updatePrompt = (updatedPrompt: PromptItem) => {
+  const updatePrompt = async (updatedPrompt: PromptItem) => {
+    // Opsiyonel: PUT isteği buraya eklenebilir
     setAllPrompts(prev => prev.map(p => p.id === updatedPrompt.id ? updatedPrompt : p));
   };
 
-  const deletePrompt = (id: string) => {
-    setAllPrompts(prev => prev.filter(p => p.id !== id));
-    addToast('İçerik başarıyla silindi.', 'success');
+  const deletePrompt = async (id: string) => {
+    try {
+      const response = await fetch(`/api/prompts?id=${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setAllPrompts(prev => prev.filter(p => p.id !== id));
+        addToast('İçerik kalıcı olarak silindi.', 'success');
+      }
+    } catch (error) {
+      addToast('Silme işlemi başarısız.', 'error');
+    }
   };
 
   const addNewStyle = (mainStyle: string, altStyle: string) => {
@@ -154,7 +189,7 @@ const App: React.FC = () => {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-40">
             <div className="w-16 h-16 border-4 border-cyber-cyan/20 border-t-cyber-cyan rounded-full animate-spin"></div>
-            <p className="mt-4 font-display tracking-widest text-cyber-cyan animate-pulse">SENKRONİZE EDİLİYOR...</p>
+            <p className="mt-4 font-display tracking-widest text-cyber-cyan animate-pulse">VERİTABANINA BAĞLANILIYOR...</p>
           </div>
         ) : filteredPrompts.length > 0 ? (
           <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 masonry-grid">
@@ -170,8 +205,8 @@ const App: React.FC = () => {
         ) : (
           <div className="text-center py-40">
              <i className="fas fa-ghost text-5xl text-slate-700 mb-4"></i>
-             <h2 className="text-2xl font-display text-slate-500 uppercase">Prompt bulunamadı</h2>
-             <p className="text-slate-600">Arama terimlerini veya filtreleri değiştirmeyi deneyin.</p>
+             <h2 className="text-2xl font-display text-slate-500 uppercase">Kalıcı Veri Bulunamadı</h2>
+             <p className="text-slate-600">Yeni bir prompt ekleyerek başlayın.</p>
           </div>
         )}
       </main>
