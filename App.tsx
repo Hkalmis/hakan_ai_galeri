@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { INITIAL_ART_STYLES, SITE_CONFIG } from './constants';
 import { PromptItem, ToastMessage } from './types';
 import PromptCard from './components/PromptCard';
@@ -249,6 +250,7 @@ const App: React.FC = () => {
         addToast={addToast}
       />
       <Toast toasts={toasts} onRemove={removeToast} />
+      <SpeedInsights />
     </div>
   );
 };
