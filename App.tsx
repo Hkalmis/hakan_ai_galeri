@@ -7,6 +7,7 @@ import PromptModal from './components/PromptModal';
 import PromptOptimizer from './components/PromptOptimizer';
 import AdminPanel from './components/AdminPanel';
 import Toast from './components/Toast';
+import SpeedInsights from './components/SpeedInsights';
 
 const App: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('Tümü');
@@ -249,6 +250,7 @@ const App: React.FC = () => {
         addToast={addToast}
       />
       <Toast toasts={toasts} onRemove={removeToast} />
+      <SpeedInsights />
     </div>
   );
 };
